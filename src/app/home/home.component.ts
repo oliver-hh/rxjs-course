@@ -1,7 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { Course } from '../model/course';
-import { interval, noop, Observable, of, timer } from 'rxjs';
-import { catchError, delayWhen, map, retryWhen, shareReplay, tap } from 'rxjs/operators';
+import { interval, noop, Observable, of, throwError, timer } from 'rxjs';
+import { catchError, delayWhen, finalize, map, retryWhen, shareReplay, tap } from 'rxjs/operators';
 import { createHttpObservable } from '../common/util';
 
 
@@ -23,24 +23,16 @@ export class HomeComponent implements OnInit {
     const http$ = createHttpObservable('/api/courses');
 
     const courses$: Observable<Course[]> = http$.pipe(
+      catchError(err => {
+        console.log(`Error occured: ${err}`);
+        return throwError(err);
+      }),
+      finalize(() => {
+        console.log('Finalize executed...');
+      }),
       tap(res => console.log(res)),
       map(res => Object.values(res['payload'])),
       shareReplay<Course[]>(),
-      catchError(err => {
-        console.log(err);
-        return of([
-          {
-            id: 1,
-            description: 'Angular for Beginners',
-            iconUrl: 'https://angular-academy.s3.amazonaws.com/thumbnails/angular2-for-beginners-small-v2.png',
-            courseListIcon: 'https://angular-academy.s3.amazonaws.com/main-logo/main-page-logo-small-hat.png',
-            longDescription: "Establish a solid layer of fundamentals, learn what's under the hood of Angular",
-            category: 'BEGINNER',
-            lessonsCount: 10
-          },
-        ]);
-      }
-      )
     );
 
     this.beginnersCourses$ = courses$.pipe(

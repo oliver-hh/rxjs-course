@@ -1,3 +1,4 @@
+import { ObserversModule } from '@angular/cdk/observers';
 import { Observable } from 'rxjs';
 
 export function createHttpObservable(url: string) {
@@ -6,7 +7,13 @@ export function createHttpObservable(url: string) {
     const signal = controller.signal;
 
     fetch(url, {signal})
-      .then(resp => resp.json())
+      .then(resp => {
+        if (resp.ok) {
+          return resp.json();
+        } else {
+          obs.error(`Request failed with status code: ${resp.status}`);
+        }
+      })
       .then(body => {
         obs.next(body);
         obs.complete();
